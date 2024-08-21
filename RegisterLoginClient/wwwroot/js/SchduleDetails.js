@@ -542,15 +542,8 @@ function getStarRating(rating) {
 
 //#endregion
 
-//#region 新增景點到日程*/
-$('#addPointWhichDayList').off('click').on('click', function () {
-    var lat = $('#add-place-btn').attr('data-lat');
-    var lng = $('#add-place-btn').attr('data-lng');
-    var placeId = $('#add-place-btn').attr('data-placeId');
-    var name = $('#add-place-btn').attr('data-name');
-    addscheduledate(lat, lng, placeId, name);
-});
-async function addscheduledate(lat, lng, placeId, name) {
+//#region 新增景點到日程
+function addscheduledate(lat, lng, placeId, name) {
     $('#AddPointWhichDayList').modal('show');
 
     // 先移除之前可能已存在的点击事件监听器
@@ -799,15 +792,15 @@ async function generateTabContents(data2, scheduleDateIdInfo) {
                     contentItem.setAttribute('data-sort', `${place.sort}`);
                     contentItem.setAttribute('data-lat', `${place.lat}`);
                     contentItem.setAttribute('data-lng', `${place.lng}`);
-                    contentItem.setAttribute('data-placeid', `${ place.placeId}`);
-                    contentItem.setAttribute('data-endtime', `${place.endTime}`);
-                    contentItem.setAttribute('data-transportationCategoryId', `${place.transportationCategoryId}`);
-                    contentItem.setAttribute('data-tranportationMode', `${transportationMode}`);
-                    contentItem.setAttribute('draggable', 'true');
-                    contentItem.addEventListener('dragstart', handleDragStart);
-                    contentItem.addEventListener('dragover', handleDragOver);
-                    contentItem.addEventListener('drop', handleDrop);
+                    contentItem.setAttribute('data-placeid', place.placeId);
+                    contentItem.setAttribute('data-endtime', place.endTime);
+                    contentItem.setAttribute('data-transportationmodeid', place.transportation.transportationCategoryId);
                     
+/*                    contentItem.setAttribute('draggable', 'true');*/
+
+                    //contentItem.addEventListener('dragstart', handleDragStart);
+                    //contentItem.addEventListener('dragover', handleDragOver);
+                    //contentItem.addEventListener('drop', handleDrop);
 
                     contentItem.innerHTML = `
                         <div class="content-item-header">
@@ -1351,11 +1344,7 @@ function insertTabContentItem(scheduleDayId, dataresults) {
     contentItem.setAttribute('data-lng', `${dataresults.lng}`);
     contentItem.setAttribute('data-placeid', dataresults.placeId);
     contentItem.setAttribute('data-endtime', dataresults.EndTime);
-    contentItem.setAttribute('transportationCategoryId', dataresults.transportationCategoryId);
-    contentItem.setAttribute('draggable', 'true');
-    contentItem.addEventListener('dragstart', handleDragStart);
-    contentItem.addEventListener('dragover', handleDragOver);
-    contentItem.addEventListener('drop', handleDrop);
+    contentItem.setAttribute('data-transportationmodeid', dataresults.TransportationCategoryId);
     contentItem.innerHTML = `
         <div class="content-item-header">
             <span class="content-item-number"></span>
