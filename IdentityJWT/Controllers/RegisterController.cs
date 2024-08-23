@@ -122,8 +122,8 @@ namespace PinPinServer.Controllers
                     //建立預設的願望清單分類
                     var defaultCategories = new List<LocationCategory>
                     {
-                        new LocationCategory { WishlistId = defaultWishlist.Id, Name = "住宿", Color = "#FF5733",Icon= "fa-solid fa-bowl-food" },
-                        new LocationCategory { WishlistId = defaultWishlist.Id, Name = "景點", Color = "#33FF57",Icon = "fa-solid fa-bowl-food" },
+                        new LocationCategory { WishlistId = defaultWishlist.Id, Name = "住宿", Color = "#FF5733",Icon= "fa-solid fa-house" },
+                        new LocationCategory { WishlistId = defaultWishlist.Id, Name = "景點", Color = "#33FF57",Icon = "fa-solid fa-mountain-sun" },
                         new LocationCategory { WishlistId = defaultWishlist.Id, Name = "餐廳", Color = "#3357FF",Icon="fa-solid fa-bowl-food" }
                     };
 
