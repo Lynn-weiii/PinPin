@@ -1,4 +1,4 @@
-﻿﻿:root {
+﻿﻿﻿:root {
     --darkgreen: #435a4f;
     --white: #f6f4e8;
 }
@@ -11,10 +11,12 @@
 
 /* #region 地圖樣式 */
 #map {
-    width: 100%;
-    height: 100vh;
+    position: relative;
+    width: calc(100% + 110px);
+    height: 100%;
+    /*height: 100vh;
     position: absolute;
-    box-sizing: border-box;
+    box-sizing: border-box;*/
 }
 
 #search_input {
@@ -30,8 +32,8 @@
 
 @media (min-width: 998.1px) {
     .row-cols-md-2 {
-        display: flex;
-        height: 100vh; /* 高度满屏 */
+        /*display: flex;*/
+        /*height: 100vh;*/ /* 高度满屏 */
     }
 
     #plannertable {
@@ -42,7 +44,7 @@
 
     #map {
         flex: 0 0 70%; /* 占据 70% */
-        max-width: 70%;
+        /*max-width: 70%;*/
         box-sizing: border-box; /* 包含边距和边框 */
     }
 }
@@ -224,15 +226,15 @@
     grid-template-columns: 1fr 1fr 1fr;
     display: inline-flex;
     overflow-x: scroll;
-    width: 500px;
+    width: 100%;
 }
 
 #scheduledetailprivewsection button {
     letter-spacing: 3px;
     border: none;
     padding: 10px;
-    background-color: #bccbe9;
-    color: #232c3d;
+    background-color: var(--white);
+    color: var(--darkgreen);
     font-size: 14px;
     cursor: pointer;
     transition: 0.5s;
@@ -417,6 +419,3 @@
     right: 10px;
     z-index: 1;
 }
-
-
-

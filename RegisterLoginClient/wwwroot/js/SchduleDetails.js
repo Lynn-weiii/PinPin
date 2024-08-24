@@ -1731,77 +1731,72 @@ document.getElementById('tab-contents').addEventListener('click', function (even
 
 
 //#region 調整行程順序
-//let draggedItem = null;
+let draggedItem = null;
+function handleDragStart(event) {
+    draggedItem = event.currentTarget;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/html', draggedItem.outerHTML);
+    event.dataTransfer.setData('text/plain', draggedItem.dataset.sort);
+}
+function handleDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+}
+async function handleDrop(event) {
+    event.preventDefault();
 
-//function handleDragStart(event) {
-//    draggedItem = event.currentTarget;
-//    event.dataTransfer.effectAllowed = 'move';
-//    event.dataTransfer.setData('text/html', draggedItem.outerHTML);
-//    event.dataTransfer.setData('text/plain', draggedItem.dataset.sort);
-//}
+    const targetItem = event.currentTarget;
+    const targetParent = targetItem.parentNode;
 
-//function handleDragOver(event) {
-//    event.preventDefault();
-//    event.dataTransfer.dropEffect = 'move';
-//}
+    if (draggedItem !== targetItem) {
+        targetParent.removeChild(draggedItem);
+        targetParent.insertBefore(draggedItem, targetItem);
+        await updateSortOrder(targetParent);
+    }
 
-//async function handleDrop(event) {
-//    event.preventDefault();
+    draggedItem = null;
+    clearMarkers();
+}
+async function updateSortOrder(parentElement) {
+    const contentItems = Array.from(parentElement.getElementsByClassName('content-item'));
 
-//    const targetItem = event.currentTarget;
-//    const targetParent = targetItem.parentNode;
+    contentItems.forEach((item, index) => {
+        item.dataset.sort = index + 1;
 
-//    if (draggedItem !== targetItem) {
-//        targetParent.removeChild(draggedItem);
-//        targetParent.insertBefore(draggedItem, targetItem);
-//        await updateSortOrder(targetParent);
-//    }
+        // 更新排序编号
+        const numberElement = item.querySelector('.content-item-number');
+        if (numberElement) {
+            numberElement.textContent = index + 1;
+        }
+    });
 
-//    draggedItem = null;
-//    clearMarkers();
+    const updatedOrder = contentItems.map(item => ({
+        id: item.dataset.id,
+        sort: item.dataset.sort,
+        scheduleDayId: item.dataset.scheduledayid
+    }));
 
-//}
+    console.log(updatedOrder);
 
-//async function updateSortOrder(parentElement) {
-//    const contentItems = Array.from(parentElement.getElementsByClassName('content-item'));
+    // 取消注释以下代码以在后端更新排序顺序
+    // try {
+    //     const response = await fetch(${baseAddress}/api/ScheduleDetails/UpdateSortOrder, {
+    //         method: 'POST',
+    //         headers: {
+    //             'Authorization': Bearer ${token},
+    //             'Content-Type': 'application/json'
+    //         },
+    //         body: JSON.stringify(updatedOrder)
+    //     });
 
-//    contentItems.forEach((item, index) => {
-//        item.dataset.sort = index + 1;
-
-//        // 更新排序编号
-//        const numberElement = item.querySelector('.content-item-number');
-//        if (numberElement) {
-//            numberElement.textContent = index + 1;
-//        }
-//    });
-
-//    const updatedOrder = contentItems.map(item => ({
-//        id: item.dataset.id,
-//        sort: item.dataset.sort,
-//        scheduleDayId: item.dataset.scheduledayid
-//    }));
-
-//    console.log(updatedOrder);
-
-//    // 取消注释以下代码以在后端更新排序顺序
-//    // try {
-//    //     const response = await fetch(${baseAddress}/api/ScheduleDetails/UpdateSortOrder, {
-//    //         method: 'POST',
-//    //         headers: {
-//    //             'Authorization': Bearer ${token},
-//    //             'Content-Type': 'application/json'
-//    //         },
-//    //         body: JSON.stringify(updatedOrder)
-//    //     });
-
-//    //     if (response.ok) {
-//    //         console.log('排序顺序更新成功');
-//    //     } else {
-//    //         console.error(更新排序顺序失败: ${response.statusText});
-//    //     }
-//    // } catch (error) {
-//    //     console.error('更新排序顺序时出错:', error);
-//    // }
-//}
+    //     if (response.ok) {
+    //         console.log('排序顺序更新成功');
+    //     } else {
+    //         console.error(更新排序顺序失败: ${response.statusText});
+    //     }
+    // } catch (error) {
+    //     console.error('更新排序顺序时出错:', error);
+    // }
+}
 
 //#endregion
