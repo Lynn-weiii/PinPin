@@ -241,11 +241,16 @@ async function initMap(scheduleId, name, position, placeId) {
     const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
     const { Geocoder } = await google.maps.importLibrary("geocoding");
     const { poly } = await google.maps.importLibrary("geometry");
-    map = new Map(document.getElementById("map"), {
-        center: position,
-        zoom: 16,
-        mapId: "d4432686758d8acc",
-    });
+
+    try {
+        map = new Map(document.getElementById("map"), {
+            center: position,
+            zoom: 16,
+            mapId: "d4432686758d8acc",
+        });
+    } catch (error) {
+        console.error("InvalidValueError:", error);
+    }
 
     infowindow = new google.maps.InfoWindow({
         maxWidth: 640,
@@ -449,7 +454,7 @@ async function geocodeLatLng(latlng) {
 
 //#region 景點詳細資訊 createInfoWindowContent(place, name, scheduleId)
 function createInfoWindowContent(place, name, scheduleId) {
-    
+    scheduleId = sessionStorage.getItem('scheduleId');
     const imageUrl = place.photos && place.photos.length > 0
         ? place.photos[0].getUrl({ maxWidth: 290, maxHeight: 290 })
         : '';
@@ -462,9 +467,8 @@ function createInfoWindowContent(place, name, scheduleId) {
         placeId: place.place_id || '',
         name: place.name || ''
     };
+    console.log(`p`, p.placeId);
 
-    p.placeId = p.placeId.replace(/'/g, "\\'");
-    p.name = p.name.replace(/'/g, "\\'");
 
     let content = `
     <div class="info-window" style="max-width: 640px; max-height: 460px; display: flex; padding: 15px; font-family: Arial, sans-serif; box-sizing: border-box;" id="info-window">
@@ -536,6 +540,7 @@ function getStarRating(rating) {
 
 //#region 新增景點到日程
 $('#AddPointWhichDayList').on('shown.bs.modal', async function () {
+    scheduleId = sessionStorage.getItem('scheduleId');
     var daylistSelected = $('#date-list option:selected');
     var scheduleDayId = daylistSelected.attr('data-schdule_day_id');
     console.log(`Initial day selected: ${daylistSelected.text()}, Id: ${scheduleDayId}`);
@@ -546,8 +551,8 @@ $('#AddPointWhichDayList').on('shown.bs.modal', async function () {
 
 $('#date-list').on('change', async function () {
     scheduleId = sessionStorage.getItem('scheduleId');
-    daylistSelected = $('#date-list option:selected');
-    scheduleDayId = daylistSelected.attr('data-schdule_day_id');
+    var daylistSelected = $('#date-list option:selected');
+    var scheduleDayId = daylistSelected.attr('data-schdule_day_id');
     console.log(`Change detected! ${scheduleId} daylistSelectedId: ${scheduleDayId}`);
     await updateStartTime(scheduleId, scheduleDayId);
 });
@@ -569,6 +574,10 @@ async function updateStartTime(scheduleId, scheduleDayId) {
         if (response.ok) {
             const result = await response.text();
             console.log('result:', result);
+            if (result === null || result === '') {
+                console.log('no result');
+                return;
+            }
             const jsonResponse = JSON.parse(result);
             console.log('jsonResponse:', jsonResponse);
 
@@ -589,12 +598,12 @@ async function updateStartTime(scheduleId, scheduleDayId) {
 
             $('#start-time').val(startTime);
 
-            const dictionary = {
-                'ScheduleDaysId': maxRecord.scheduleDayId,
-                'Sort': maxRecord.sort || null,
-                'ScheduleEndTime': maxRecord.endTime,
-            };
-            console.log('Dictionary:', dictionary);
+            //const dictionary = {
+            //    'ScheduleDaysId': maxRecord.scheduleDayId,
+            //    'Sort': maxRecord.sort || null,
+            //    'ScheduleEndTime': maxRecord.endTime,
+            //};
+            //console.log('Dictionary:', dictionary);
         } else {
             console.error('Failed to fetch schedule details:', response.statusText);
         }
@@ -612,14 +621,12 @@ $('#addPointWhichDayList').off('click').on('click', function () {
     var lng = $('#add-place-btn').attr('data-lng');
     var placeId = $('#add-place-btn').attr('data-placeId');
     var name = $('#add-place-btn').attr('data-name');
+    console.log(`#addPointWhichDayList clicke:${lat}/${lng}/${placeId}/${name}`)
     addscheduledate(lat, lng, placeId, name);
 });
 
 
 async function addscheduledate(lat, lng, placeId, name) {
-
-    var schduleDayId = $('.tab-button.active').data('data-schdule_day_id');
-    console.log(`addsch`, schduleDayId)
     $('#AddPointWhichDayList').modal('show');
     var daylistSelected = $('#date-list option:selected');
     var daylistSelectedId = daylistSelected.attr('data-schdule_day_id');
@@ -630,8 +637,6 @@ async function addscheduledate(lat, lng, placeId, name) {
     stratTime += ":00";
     endTime += ":00";
     var day = daylistSelected.text();
-    console.log(`transportationId: ${TransportationCategoryId}`);
-    var scheduleId = sessionStorage.getItem('scheduleId');
     var body = {
         "ScheduleDayId": daylistSelectedId,
         "LocationName": name,
@@ -641,10 +646,8 @@ async function addscheduledate(lat, lng, placeId, name) {
         "lat": lat,
         "lng": lng,
         "TransportationCategoryId": TransportationCategoryId
-    };
-
-
-    console.log(JSON.stringify(body));
+    };    
+    console.log(`addscheduledate`,JSON.stringify(body));
 
     try {
         let response = await fetch(`${baseAddress}/api/ScheduleDetails`, {
@@ -655,24 +658,26 @@ async function addscheduledate(lat, lng, placeId, name) {
             },
             body: JSON.stringify(body)
         });
-        var dataresult = await response.json();
-        picture = await fetchPlacePhotoUrl(dataresult.location)
-        console.log(`新增景點接回的結果`, dataresult);
-        var dataresults = {
-            "Id": dataresult.id,
-            "Sort": dataresult.sort,
-            "ScheduleDayId": dataresult.scheduleDayId,
-            "LocationName": dataresult.locationName,
-            "placeId": dataresult.location,
-            "StartTime": dataresult.startTime,
-            "EndTime": dataresult.endTime,
-            "lat": dataresult.lat,
-            "lng": dataresult.lng,
-            "TransportationCategoryId": dataresult.transportationCategoryId,
-            "pictureUrl": picture
-        };
-        console.log(`add data result: ${dataresults}`)
-        if (response.ok) {
+        console.log('Response status:', response.status);      
+
+        if (response.status === 200) {
+            var dataresult = await response.json();
+            let picture = await fetchPlacePhotoUrl(dataresult.location);
+            var dataresults = {
+                "Id": dataresult.id,
+                "Sort": dataresult.sort,
+                "ScheduleDayId": dataresult.scheduleDayId,
+                "LocationName": dataresult.locationName,
+                "placeId": dataresult.location,
+                "StartTime": dataresult.startTime,
+                "EndTime": dataresult.endTime,
+                "lat": dataresult.lat,
+                "lng": dataresult.lng,
+                "TransportationCategoryId": dataresult.transportationCategoryId,
+                "pictureUrl": picture
+            };
+            console.log('新增景點接回的結果', dataresult);
+            console.log('add data result:', dataresults);
             Swal.fire({
                 title: "成功",
                 text: `已新增 ${name} 到 ${day} 的行程中！`,
@@ -680,54 +685,63 @@ async function addscheduledate(lat, lng, placeId, name) {
                 showConfirmButton: false,
                 timer: 1500
             }).then(() => {
-                console.log(`go refresh add schedule id :${scheduleId}`);
+                console.log(`Go refresh add schedule id: ${dataresult.scheduleDayId}`);
                 insertTabContentItem(dataresult.scheduleDayId, dataresults);
             });
-        } else if (response.status === 409) {
-            let data = await response.json();
-            Swal.fire({
-                title: "Are you sure?",
-                text: data.message,
-                icon: "warning",
-                iconColor: '#E4003A',
-                showCancelButton: true,
-                confirmButtonColor: "#405D72",
-                cancelButtonColor: "#F9E0BB",
-                confirmButtonText: "確認再新增"
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    let response2 = await fetch(`${baseAddress}/api/ScheduleDetails/override-schedule-detail`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(body)
-                    });
-                    if (response2.ok) {
-                        Swal.fire({
-                            title: "成功",
-                            text: `已新增 ${name} 到 ${day} 的行程中！`,
-                            icon: "success",
-                            showConfirmButton: false,
-                            timer: 1500
-                        }).then(() => {
-                            console.log(`go refresh add schedule id :${scheduleId}`);
-                            insertTabContentItem(dataresult.scheduleDayId, dataresults);
+        }
+
+        if (response.status === 409) {
+            try {
+                let conflictData = await response.json();
+                console.log('Conflict data:', conflictData);
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: conflictData.message,
+                    icon: "warning",
+                    iconColor: '#E4003A',
+                    showCancelButton: true,
+                    confirmButtonColor: "#405D72",
+                    cancelButtonColor: "#F9E0BB",
+                    confirmButtonText: "確認再新增"
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        let response2 = await fetch(`${baseAddress}/api/ScheduleDetails/override-schedule-detail`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(body)
                         });
-                    } else {
-                        Swal.fire({
-                            title: "Oops!",
-                            text: "新增失敗，請重新嘗試。",
-                            icon: "error",
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
+
+                        if (response2.ok) {
+                            Swal.fire({
+                                title: "成功",
+                                text: `已新增 ${name} 到 ${day} 的行程中！`,
+                                icon: "success",
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                console.log(`Go refresh add schedule id: ${dataresult.scheduleDayId}`);
+                                insertTabContentItem(dataresult.scheduleDayId, dataresults);
+                            });
+                        } else {
+                            Swal.fire({
+                                title: "Oops!",
+                                text: "新增失敗，請重新嘗試。",
+                                icon: "error",
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        }
                     }
-                }
-            });
-        } else {
-            await handleResponseErrors(response);
+                });
+            }
+            catch (error) {
+                console.error('Error occurred:', error);
+            }
+        }
+        else {
             Swal.fire({
                 title: "Oops!",
                 text: "新增失敗，請重新嘗試。",
@@ -737,10 +751,10 @@ async function addscheduledate(lat, lng, placeId, name) {
             });
         }
     } catch (error) {
-        console.error('Error adding place to schedule:', error);
+        console.error('Error occurred:', error);
         Swal.fire({
             title: "Oops!",
-            text: "新增失敗，請重新嘗試。",
+            text: "處理請求時發生錯誤，請重試。",
             icon: "error",
             showConfirmButton: false,
             timer: 1500
@@ -865,7 +879,7 @@ async function generateTabContents(data2, scheduleDateIdInfo) {
                     contentItem.setAttribute('data-sort', `${place.sort}`);
                     contentItem.setAttribute('data-lat', `${place.lat}`);
                     contentItem.setAttribute('data-lng', `${place.lng}`);
-                    contentItem.setAttribute('data-placeid', `${place.placeId}`);
+                    contentItem.setAttribute('data-placeId', `${place.placeId}`);
                     contentItem.setAttribute('data-endtime', `${place.endTime}`);
                     contentItem.setAttribute('data-transportationCategoryId', `${place.transportationCategoryId}`);
                     contentItem.setAttribute('draggable', 'true');
@@ -1163,7 +1177,7 @@ async function AddPointToWishList() {
             var locationcategoryId = $(locationcategorySelected).attr('data-locationcategoryid');
             var lat = $(wishlistSelected).attr('data-lat');
             var lng = $(wishlistSelected).attr('data-lng');
-            var place_id = $(wishlistSelected).attr('data-placeid');
+            var place_id = $(wishlistSelected).attr('data-placeId');
             var createat = Date.now();
             var name = $(wishlistSelected).attr('data-name').toString();
             var body = {
@@ -1171,7 +1185,7 @@ async function AddPointToWishList() {
                 "locationCategoryId": locationcategoryId,
                 "locationLng": lng,
                 "locationLat": lat,
-                "googlePlaceId": place_id,
+                "placeId": place_id,
                 "name": name,
                 "create_at": createat
             };
@@ -1254,7 +1268,7 @@ async function ShowWishList(lat, lng, placeId, name) {
             option.setAttribute('data-wishlistid', optionData.id);
             option.setAttribute('data-lat', lat);
             option.setAttribute('data-lng', lng);
-            option.setAttribute('data-placeid', placeId);
+            option.setAttribute('data-placeId', placeId);
             option.setAttribute('data-name', name);
             option.value = optionData.id;
             wishlistContent.appendChild(option);
@@ -1414,7 +1428,7 @@ function insertTabContentItem(scheduleDayId, dataresults) {
     contentItem.setAttribute('data-sort', `${dataresults.Sort}`);
     contentItem.setAttribute('data-lat', `${dataresults.lat}`);
     contentItem.setAttribute('data-lng', `${dataresults.lng}`);
-    contentItem.setAttribute('data-placeid', `${dataresults.placeId}`);
+    contentItem.setAttribute('data-placeId', `${dataresults.placeId}`);
     contentItem.setAttribute('data-endtime', `${dataresults.EndTime}`);
     contentItem.setAttribute('data-transportationCategoryId', `${dataresults.TransportationCategoryId}`);
     contentItem.setAttribute('draggable', 'true');
